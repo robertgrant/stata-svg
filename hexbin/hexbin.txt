@@ -1,0 +1,49 @@
+
+It would be nice to produce a hexbin plot (possibly overlaid on a map) because people would think we are really cool.
+Could be tricky to do though. Some issues and a suggested strategy are below.
+
+
+PRODUCING THE DATA TO PLOT:
+===========================
+We could start with the premise, 'Given data of (hex) points, and counts for each point, we can plot it and edit the SVG to make it a grid of hexaons'
+But we should show how to get the counts for each point. Others have done this before (e.g. R's hexbin package). The simplest method I have seen is described here: http://stackoverflow.com/questions/7705228/hexagonal-grids-how-do-you-find-which-hexagon-a-point-is-in
+
+Suggested strategy:
+- Create a grid of points each of which is the centre of a future hexagon (issue: how to choose the grid's coarseness)
+- For each point, count the number of observations which will lie within the future hexagon, and store (x,y,count) in a temporary dataset
+- Plot the temporary data for these points and output as SVG
+- Edit the SVG file from within Stata, attaching a function of count as some sort of attribute for each point (changing the colour / opacity / size / other)
+- Turn the points into hexagons (see below)
+- and maybe even insert an image file in the background, which is super easy. Given latitude-longitude of the x and y limits (and no padding of the plot region), we could even have the program go get the image from open street map or some such... maybe that's getting carried away.
+
+There are several ways one could count whether a point lies within a hexagon. The one used in R's hexbin package is straightforward but I think it's wrong:
+- Create two grids of rectangles which are the centre points of two grids of hexagons
+- Each datapoint lies within two rectangles. It's easy to work out which two rectangles
+- We can then identify the correct hexagon by calculating the centre to which the point is closest
+
+Starting from first principles (ignorance), I thought we could do it by a rectangular grid and then diagonals in a two-step process that avoids calculating any Euclidean distances (see 20170519_162757.jpg)
+
+An alternative way to create counts would be to count the number of points that lie within the smallest circle enveloping the hexagon. This is easy to calculate, I think. Some points would be counted in two hexagons and this is where the smoothing comes from.
+In principle I think I prefer this:
+- if you shift the location of the hexagons, the plot will change less dramatically than if you have counted points in the hexagon
+- it works like subpixel rendering used with fonts
+But on the down side, it means calculating Euclidean distances for a lot of points (potentially). Is that slower than the idea above - possibly, not sure. Smoothing is an interesting issue but maybe not central to this svg mission we find ourselves on.
+
+CREATING HEXAGONS:
+======================
+In my head, we would like to produce a definition of a shape (hex), and simply replace 'circle' with 'hex' through the svg file.
+I don't have any idea how to create a shape object in svg.
+Yeah this is what we're going to do! We can define a shape and then repeat it: https://sarasoueidan.com/blog/structuring-grouping-referencing-in-svg/#the-defs-element
+
+
+MISCELLANEOUS:
+==============
+Do we have a view on whether the straight edges of the grid should be on the vertical or horizontal? I don't know if there is a general preference or it people will want to have the option. Again, using the 'slightly smoothed' counts should mean changing the orientation doesn't change the overall effect much.
+R hexbin package has straight edges vertical, as in:
+  /\
+ |  |
+  \/
+but we should give the option in due course. Straight edges horizontal are wired into my brain by many hours chasing dragons around boards as a nerdy kid in the 80s.
+
+
+Leland Wilkinson's weird but much-cited book "grammar of graphics" names Carr 1987 JASA; 82:424-36. as the source of hexbins. Who are we to argue?

@@ -1,0 +1,22 @@
+By 'objects', I mean any SVG tagged content like a rect or text.
+Add ids and/or classes to objects. For example, all circles (scatterplot symbols) originating from a particular subset of the data get a particular class
+
+For what follows, it could then be applied to all objects, all of a certain type (e.g. all rects), or all of a given class, or just one particular ID.
+
+
+ADD ATTRIBUTES TO OBJECTS:
+==========================
+Add style settings to objects, e.g. opacity, fonts
+Add SVG gradients (see Nadieh Bremer's talks online)
+? SVG animation (Sarah Drasner's book)
+
+CHANGE OBJECTS INTO OTHER OBJECTS:
+==================================
+Change objects into something that Stata doesn't currently output - most likely application is for different marker symbols
+Different symbols - tesselating poly objects - hexagons are a likely application
+  llok at R hexbin
+
+ADD STUFF THAT WASN'T THERE IN THE STATA GRAPH:
+===============================================
+Add vector graphics from another file into the background of the graphregion or plotregion, e.g. maps!
+Add annotations (but avoiding each other is a hard problem - it might actually be NP-complete! - although there are algorithms out there...)
