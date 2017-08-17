@@ -35,6 +35,21 @@ In my head, we would like to produce a definition of a shape (hex), and simply r
 I don't have any idea how to create a shape object in svg.
 Yeah this is what we're going to do! We can define a shape and then repeat it: https://sarasoueidan.com/blog/structuring-grouping-referencing-in-svg/#the-defs-element
 
+We can either define a standard hexagon with side of length 1, and then scale it with CSS transforms each time, or calculate what size it should be and set that in the <symbol>. I prefer the latter because of less computation when viewing it, but if we wanted to allow different size hexs one day (e.g. http://projects.delimited.io/experiments/hexbins/starbucks.html) then we'd need the first option. Unfortunately this also introduces a pain in that the viewPort is in inches and blah blah... one to come back to, probably never.
+
+The do-file needs to do these steps:
+bin the points in hexagons
+make a scatterplot with binned colours on a hex grid (centroids of the hexagons)
+export it as SVG
+read the SVG in:
+  find the circles and extract the x and y positions in pixels and the fill colors
+  find and extract the positions of the x and y axes
+  calculate half the straight-side (see below) distance from circle to circle, and scale up a hexagon to this size.
+  write a new svg file with:
+    no circles
+    a <symbol> defining the hexagon shape
+    <use> tags for each hexagon (one replacing each circle)
+
 
 MISCELLANEOUS:
 ==============
