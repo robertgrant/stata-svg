@@ -43,12 +43,13 @@ make a scatterplot with binned colours on a hex grid (centroids of the hexagons)
 export it as SVG
 read the SVG in:
   find the circles and extract the x and y positions in pixels and the fill colors
-  find and extract the positions of the x and y axes
-  calculate half the straight-side (see below) distance from circle to circle, and scale up a hexagon to this size.
+  find and extract the positions of the x and y axes (maybe)
+  calculate the straight-side (see below) distance from circle to circle, divided by a number depending on the hexagon orientation, and scale up a hexagon to this size.
   write a new svg file with:
     no circles
     a <symbol> defining the hexagon shape
     <use> tags for each hexagon (one replacing each circle)
+At present, it makes a scatterplot in SVG, reads that with file handle tempname fh, copies everything before the circles into tempname fh2 and everything afterwards into tempname fh3, adds the <symbol> and <use>s to fh2, then copies all of fh3 into fh2. fh2 becomes the output file.
 
 
 MISCELLANEOUS:

@@ -19,7 +19,6 @@
 		option for orientation of hexagons
 			tm - requires redefining stuff from nrows in terms of ncols
 			rg - yeah we'll leave that for now
-!!!		write <symbol> and <use>s when you detect </svg> in the input file
 		option to make hexs with d3
 		
 	Notes:
