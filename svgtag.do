@@ -70,9 +70,9 @@ while `"`readline'"'!="</svg>" {
 		local heightpos2=strpos(`"`readline'"',"viewBox=")-1	
 		local viewBoxpos1=strpos(`"`readline'"',"viewBox=")+9	
 		local viewBoxpos2=strpos(`"`readline'"',"xmlns=")-1
-		local returnwidth=substr(`"`readline'"',`widthpos1',`widthpos2'-`widthpos1')
-		local returnheight=substr(`"`readline'"',`heightpos1',`heightpos2'-`heightpos1')
-		local returnviewBox=substr(`"`readline'"',`viewBoxpos1',`viewBoxpos2'-`viewBoxpos1')
+		local returnwidth=substr(`"`readline'"',`widthpos1',`widthpos2'-`widthpos1'-1)
+		local returnheight=substr(`"`readline'"',`heightpos1',`heightpos2'-`heightpos1'-1)
+		local returnviewBox=substr(`"`readline'"',`viewBoxpos1',`viewBoxpos2'-`viewBoxpos1'-1)
 	}
 	
 	// identify graphregion and plotregion, extract dimensions, and add class
@@ -81,14 +81,14 @@ while `"`readline'"'!="</svg>" {
 		local xpos2=strpos(`"`readline'"',"y=")-1	
 		local ypos1=strpos(`"`readline'"',"y=")+3
 		local ypos2=strpos(`"`readline'"',"width=")-1	
-		local returngrx=substr(`"`readline'"',`xpos1',`xpos2'-`xpos1')
-		local returngry=substr(`"`readline'"',`ypos1',`ypos2'-`ypos1')
+		local returngrx=substr(`"`readline'"',`xpos1',`xpos2'-`xpos1'-1)
+		local returngry=substr(`"`readline'"',`ypos1',`ypos2'-`ypos1'-1)
 		local widthpos1=strpos(`"`readline'"',"width=")+7
 		local widthpos2=strpos(`"`readline'"',"height=")-1	
 		local heightpos1=strpos(`"`readline'"',"height=")+8
 		local heightpos2=strpos(`"`readline'"',"style=")-1	
-		local returngrwidth=substr(`"`readline'"',`widthpos1',`widthpos2'-`widthpos1')
-		local returngrheight=substr(`"`readline'"',`heightpos1',`heightpos2'-`heightpos1')
+		local returngrwidth=substr(`"`readline'"',`widthpos1',`widthpos2'-`widthpos1'-1)
+		local returngrheight=substr(`"`readline'"',`heightpos1',`heightpos2'-`heightpos1'-1)
 		local graphregion1=substr(`"`readline'"',1,`heightpos2')
 		local graphregion2=substr(`"`readline'"',`heightpos2'+1,.)
 		file write `fo' `"`graphregion1' class="graphregion" `graphregion2'"' _n
@@ -100,14 +100,14 @@ while `"`readline'"'!="</svg>" {
 		local xpos2=strpos(`"`readline'"',"y=")-1	
 		local ypos1=strpos(`"`readline'"',"y=")+3
 		local ypos2=strpos(`"`readline'"',"width=")-1	
-		local returnprx=substr(`"`readline'"',`xpos1',`xpos2'-`xpos1')
-		local returnpry=substr(`"`readline'"',`ypos1',`ypos2'-`ypos1')
+		local returnprx=substr(`"`readline'"',`xpos1',`xpos2'-`xpos1'-1)
+		local returnpry=substr(`"`readline'"',`ypos1',`ypos2'-`ypos1'-1)
 		local widthpos1=strpos(`"`readline'"',"width=")+7
 		local widthpos2=strpos(`"`readline'"',"height=")-1	
 		local heightpos1=strpos(`"`readline'"',"height=")+8
 		local heightpos2=strpos(`"`readline'"',"style=")-1	
-		local returnprwidth=substr(`"`readline'"',`widthpos1',`widthpos2'-`widthpos1')
-		local returnprheight=substr(`"`readline'"',`heightpos1',`heightpos2'-`heightpos1')
+		local returnprwidth=substr(`"`readline'"',`widthpos1',`widthpos2'-`widthpos1'-1)
+		local returnprheight=substr(`"`readline'"',`heightpos1',`heightpos2'-`heightpos1'-1)
 		local plotregion1=substr(`"`readline'"',1,`heightpos2')
 		local plotregion2=substr(`"`readline'"',`heightpos2'+1,.)
 		file write `fo' `"`plotregion1' class="plotregion" `plotregion2'"' _n
@@ -163,7 +163,15 @@ file close `fo'
 return local stataversion "`stataversion'"
 return local width "`returnwidth'"
 return local height "`returnheight'"
-return local viewBox "`viewBox'"
+return local viewBox "`returnviewBox'"
+return local plotregionwidth "`returnprwidth'"
+return local plotregionheight "`returnprheight'"
+return local plotregionx "`returnprx'"
+return local plotregiony "`returnpry'"
+return local graphregionwidth "`returngrwidth'"
+return local graphregionheight "`returngrheight'"
+return local graphregionx "`returngrx'"
+return local graphregiony "`returngry'"
 
 end
 
