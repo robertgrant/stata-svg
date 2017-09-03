@@ -63,3 +63,11 @@ but we should give the option in due course. Straight edges horizontal are wired
 
 
 Leland Wilkinson's weird but much-cited book "grammar of graphics" names Carr 1987 JASA; 82:424-36. as the source of hexbins. Who are we to argue?
+
+
+======================
+30 aug 2017 notes
+======================
+aspect ratio - can check x and y distances in the svg scatter output, then redraw it with an adjustment. come back to this TM
+bolt parts 1 & 2 together - RG
+image in background - RG

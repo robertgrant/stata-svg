@@ -33,7 +33,8 @@ if `"`outputfile'"'=="" & "`replace'"=="" {
 	error 100
 }
 if `"`outputfile'"'=="" & "`replace'"=="replace" {
-	local outputfile `"`inputfile'"'
+	tempfile tempout
+	local outputfile `"`tempout'"'
 }
 
 // check the inputfile exists
@@ -158,6 +159,17 @@ file write `fo' "</svg>" _n _n
 
 file close `fi'
 file close `fo'
+
+// replace option
+if `"`outputfile'"'=="" & "`replace'"=="replace" {
+	if lower("$S_OS")=="windows" {
+		shell del `"`inputfile'"'
+		shell rename `"`outputfile'"' `"`inputfile'"'
+	}
+	else {
+		shell rename -f `"`outputfile'"' `"`inputfile'"'
+	}
+}
 
 // return metadata
 return local stataversion "`stataversion'"
