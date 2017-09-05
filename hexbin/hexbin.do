@@ -32,7 +32,8 @@ local gridmax = max(`rows',`cols')
 local aspect = (.5*sqrt(3)*(`rows'+1))/(`cols'+1) // Stata does something funny with aspect that is easy to see with hexes
 //di `aspect'
 // THERE SHOULD BE A NOAXES OPTION
-// ADD XVAR AND YVAR
+local xvar "sepwid"
+local yvar "seplen"
 // ###############################################
 
 
@@ -75,6 +76,7 @@ preserve
 * Because of fillin, it's good to make a large square of gridmax by gridmax
 * then fillin and separate out the grids
 gen int `ygrid' = 1+2*(_n-1) in 1/`=(`gridmax'+1)/2' // for first grid, y is only evens
+// WHAT IF _N < `gridmax' ?
 gen int `xgrid' = 2*(_n-1) in 1/`=(`gridmax'+1)/2' // for first grid, y is only odds
 fillin `xgrid' `ygrid' // fillin is pretty good, but must be a better way!
 * convenient to put into mata to remove fillin-expanded rows
@@ -94,14 +96,14 @@ replace `xgrid' = . if `xgrid'>`cols'-1
 
 // ################# Part 1 - scale and count x and y ####################
 * Have to scale x and y data first (our first reference to y and x)
-summ y //, meanonly
+summ `yvar' //, meanonly
 	local ymin = r(min) // needed for later when we will rescale the grid
 	local ymax = r(max)
-	gen float `ysc' = ((y-`r(min)')/(`r(max)'-`r(min)'))*(`rows')
-summ x //, meanonly
+	gen float `ysc' = ((`yvar'-`r(min)')/(`r(max)'-`r(min)'))*(`rows')
+summ `xvar' //, meanonly
 	local xmin = r(min) // needed for later when we will rescale the grid
 	local xmax = r(max)
-	gen float `xsc' = ((x-`r(min)')/(`r(max)'-`r(min)'))*(`cols')
+	gen float `xsc' = ((`xvar'-`r(min)')/(`r(max)'-`r(min)'))*(`cols')
 gen long `count' = . // the whole thing has been leading to this variable!
 levelsof `ygrid', local(ylevs)
 levelsof `xgrid', local(xlevs)
@@ -160,10 +162,10 @@ tw (scatter ygrid xgrid /*[fw=count]*/ , msym(o)),	///
 // #################### Make interim SVG scatterplot ###################
 egen colorcat=cut(`count'), group(`ncat')
 // OPEN DO-FILE AND WRITE OUT EACH CATEGORY LINE LIKE THIS, THEN RUN
-twoway (scatter y x if colorcat==0, mcolor("`col1'")) ///
-       (scatter y x if colorcat==1, mcolor("`col2'")) ///
-	   (scatter y x if colorcat==2, mcolor("`col3'")) ///
-	   (scatter y x if colorcat==3, mcolor("`col4'")) ///
+twoway (scatter `yvar' `xvar' if colorcat==0, mcolor("`col1'")) ///
+       (scatter `yvar' `xvar' if colorcat==1, mcolor("`col2'")) ///
+	   (scatter `yvar' `xvar' if colorcat==2, mcolor("`col3'")) ///
+	   (scatter `yvar' `xvar' if colorcat==3, mcolor("`col4'")) ///
 	   , xlab(minmax, format(%9.0fc)) ylab(minmax, format(%9.0fc))	///
 		 aspect($aspect ) legend(off) graphregion(color(white))
 // THE NOAXES OPTION TAKES EFFECT HERE
