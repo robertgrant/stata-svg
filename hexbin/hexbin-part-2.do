@@ -50,6 +50,8 @@ global output "output.svg"
 // calculate some other stuff once
 global nhexc=1+floor($aspect * $nhexr) // note this is the wider row
 global nhex=($nhexr * $nhexc) + floor($nhexr / 2) // SHOULD THIS BE MINUS?
+global aspect = ($nhexr *sqrt(3)/2)/$nhexc // aspect ratio
+
 
 
 //######################################################################################
@@ -71,7 +73,8 @@ twoway (scatter y x if colorcat==0, mcolor("198 56 128")) ///
        (scatter y x if colorcat==1, mcolor("160 94 128")) ///
 	   (scatter y x if colorcat==2, mcolor("122 132 128")) ///
 	   (scatter y x if colorcat==3, mcolor("85 170 128")) ///
-	   , legend(off) graphregion(color(white))
+	   , xlab(minmax, format(%9.0fc)) ylab(minmax, format(%9.0fc))	///
+		 aspect($aspect ) legend(off) graphregion(color(white))
 // do we need to specify aspect?
 graph export "$svgfile", $replace
 //######################################################################################
@@ -138,7 +141,7 @@ while r(eof)==0 {
 			// add to data
 				replace x=`svgx' in `circount'
 				replace y=`svgy' in `circount'
-				replace fill="`svgfill'" in `circount'
+				replace fill="`="`svgfill''" in `circount'
 				local ++loopcount
 		}
 		// if not a circle, write the line to the output file
