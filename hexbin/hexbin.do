@@ -1,24 +1,38 @@
 version 14.2
 
+/*
+	A CONVENTION:
+	"vertical straight edge" means hexagons like this:
+	 /\
+	|  |
+	 \/
+	while "horizontal straight edge" means:
+	 _
+	/ \
+	\_/
+	 
+*/
+
 clear all
-capture file close _all
-capture log close
-cd "~/Dropbox/stata-svg/hexbin"
-log using "hexbin-log.smcl", replace smcl
+
 
 // define program here
-
-
+/*capture program drop svghex
+program define svghex
+syntax
+*/
 
 
 // ############## Part 1 user inputs #############
 local rows 13
-local cols 17
+local cols 17 // IS THIS THE LONGER OR SHORTER OF THE TWO POSSIBLE ROWS?
 // TIM CAN YOU EXPLAIN WHAT d IS? WILL IT BE A PROGRAM ARGUMENT?
 local d 1 // d may be set to 1 in general so probably remove (unless useful later for y,x scaling)
 local gridmax = max(`rows',`cols')
 local aspect = (.5*sqrt(3)*(`rows'+1))/(`cols'+1) // Stata does something funny with aspect that is easy to see with hexes
 //di `aspect'
+// THERE SHOULD BE A NOAXES OPTION
+// ADD XVAR AND YVAR
 // ###############################################
 
 
@@ -48,33 +62,33 @@ local nhex=(`rows' * `cols') + floor(`rows' / 2) // THIS WOULD BE MINUS IF COLS 
 
 
 // ############# Tim's fake data ################
-drawnorm y x, n(500) clear
-replace y = y+5 if runiform() > .7
+//drawnorm y x, n(500) clear
+//replace y = y+5 if runiform() > .7
 // ##############################################
 
 
-
+tempname ygrid
+tempname xgrid
+tempname count
 // ############## Part 1 : Generate square grid ###############
 preserve
 * Because of fillin, it's good to make a large square of gridmax by gridmax
 * then fillin and separate out the grids
-gen int ygrid = 1+2*(_n-1) in 1/`=(`gridmax'+1)/2' // for first grid, y is only evens
-gen int xgrid = 2*(_n-1) in 1/`=(`gridmax'+1)/2' // for first grid, y is only odds
-fillin xgrid ygrid // fillin is pretty good, but must be a better way!
-//scatter yg xg
+gen int `ygrid' = 1+2*(_n-1) in 1/`=(`gridmax'+1)/2' // for first grid, y is only evens
+gen int `xgrid' = 2*(_n-1) in 1/`=(`gridmax'+1)/2' // for first grid, y is only odds
+fillin `xgrid' `ygrid' // fillin is pretty good, but must be a better way!
 * convenient to put into mata to remove fillin-expanded rows
 * (would be so easy with multiple datasets)
-putmata YX1 = (ygrid xgrid), omitmissing replace
-replace ygrid = ygrid-1 // now convert grid 1 to grid 2
-replace xgrid = xgrid+1
-putmata YX2 = (ygrid xgrid), omitmissing replace
+putmata YX1 = (`ygrid' `xgrid'), omitmissing replace
+replace `ygrid' = `ygrid'-1 // now convert grid 1 to grid 2
+replace `xgrid' = `xgrid'+1
+putmata YX2 = (`ygrid' `xgrid'), omitmissing replace
 mata: YX = YX1 \ YX2
 	drop if _fillin
-	drop ygrid xgrid _fillin
-getmata (ygrid xgrid) = YX, force
-replace ygrid = . if ygrid>`rows'-1
-replace xgrid = . if xgrid>`cols'-1
-//scatter ygrid xgrid, ylab(0(1)`=`rows'-1') xlab(0(1)`=`cols'-1') // check grid vals are as required
+	drop `ygrid' `xgrid' _fillin
+getmata (`ygrid' `xgrid') = Y`X, force
+replace `ygrid' = . if `ygrid'>`rows'-1
+replace `xgrid' = . if `xgrid'>`cols'-1
 // ############################################################
 
 
@@ -88,14 +102,14 @@ summ x //, meanonly
 	local xmin = r(min) // needed for later when we will rescale the grid
 	local xmax = r(max)
 	gen float `xsc' = ((x-`r(min)')/(`r(max)'-`r(min)'))*(`cols')
-gen long count = . // the whole thing has been leading to this variable!
-levelsof ygrid, local(ylevs)
-levelsof xgrid, local(xlevs)
+gen long `count' = . // the whole thing has been leading to this variable!
+levelsof `ygrid', local(ylevs)
+levelsof `xgrid', local(xlevs)
 * Essentially we are checking if scaled x is within =/-1 and if  [SOME TEXT MISSING FROM THIS COMMENT]
 quietly {
 foreach yc of local ylevs {
 	foreach xc of local xlevs {
-		count if  ygrid==`yc' & xgrid==`xc' // only want to bother counting if the grid combo exists
+		count if  `ygrid'==`yc' & `xgrid'==`xc' // only want to bother counting if the grid combo exists
 		if r(N) > 0 {
 			di as text "yc = " as result `yc' as text ", xc = " as result `xc'
  			qui count if (`xsc' > `xc' - (1*`d'))	///
@@ -104,23 +118,25 @@ foreach yc of local ylevs {
 				& (`ysc' < `yc' + 1 + (.5*(`xsc'-`xc'))) ///
 				& (`ysc' > `yc' - 1 - (.5*(`xsc'-`xc'))) ///
 				& (`ysc' > `yc' - 1 + (.5*(`xsc'-`xc')))
-			replace count = `r(N)' if ygrid==`yc' & xgrid==`xc'
+			replace `count' = `r(N)' if `ygrid'==`yc' & `xgrid'==`xc'
 		}
 	}
 }
 }
 * Rescale the grids to actual var scale now that we have counts
-replace ygrid = ((ygrid/`rows')*(`ymax'-`ymin')) + `ymin'
-replace xgrid = ((xgrid/`cols')*(`xmax'-`xmin')) + `xmin'
+replace `ygrid' = ((`ygrid'/`rows')*(`ymax'-`ymin')) + `ymin'
+replace `xgrid' = ((`xgrid'/`cols')*(`xmax'-`xmin')) + `xmin'
 // #######################################################################
 
 
 // ################### Part 1 demo with a circle bin ####################
 * The aspect only works if the bins fill the plotregion. It's hard to make this happen.
+/*
 tw (scatter ygrid xgrid /*[fw=count]*/ , msym(o)),	///
 	ylab(minmax, format(%9.2fc))	///
 	xlab(minmax, format(%9.2fc))	///
 	aspect(`aspect') name(circ_result, replace)
+*/
 // ######################################################################
 
 
@@ -142,13 +158,15 @@ tw (scatter ygrid xgrid /*[fw=count]*/ , msym(o)),	///
 
 
 // #################### Make interim SVG scatterplot ###################
-egen colorcat=cut(count), group(`ncat')
-twoway (scatter y x if colorcat==0, mcolor("198 56 128")) ///
-       (scatter y x if colorcat==1, mcolor("160 94 128")) ///
-	   (scatter y x if colorcat==2, mcolor("122 132 128")) ///
-	   (scatter y x if colorcat==3, mcolor("85 170 128")) ///
+egen colorcat=cut(`count'), group(`ncat')
+// OPEN DO-FILE AND WRITE OUT EACH CATEGORY LINE LIKE THIS, THEN RUN
+twoway (scatter y x if colorcat==0, mcolor("`col1'")) ///
+       (scatter y x if colorcat==1, mcolor("`col2'")) ///
+	   (scatter y x if colorcat==2, mcolor("`col3'")) ///
+	   (scatter y x if colorcat==3, mcolor("`col4'")) ///
 	   , xlab(minmax, format(%9.0fc)) ylab(minmax, format(%9.0fc))	///
 		 aspect($aspect ) legend(off) graphregion(color(white))
+// THE NOAXES OPTION TAKES EFFECT HERE
 graph export `"`svgfile'"', `replace'
 // #################################################
 
@@ -159,6 +177,7 @@ graph export `"`svgfile'"', `replace'
 
 // ######################## Part 2 ############################
 clear
+// make new data to hold what's in the interim SVG file in pixels, color codes etc
 set obs `nhex'
 gen x=.
 gen y=.
@@ -300,6 +319,14 @@ file close `fh3'
 restore
 // ####################################################################
 
+end
+
+
+
 capture log close
+log using "hexbin-log.smcl", replace smcl
+//svghex ...
+capture log close
+
 
 
