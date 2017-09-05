@@ -14,27 +14,31 @@ log using "hexbin-log.smcl", replace smcl
 // ############## Part 1 user inputs #############
 local rows 13
 local cols 17
+// TIM CAN YOU EXPLAIN WHAT d IS? WILL IT BE A PROGRAM ARGUMENT?
 local d 1 // d may be set to 1 in general so probably remove (unless useful later for y,x scaling)
 local gridmax = max(`rows',`cols')
 local aspect = (.5*sqrt(3)*(`rows'+1))/(`cols'+1) // Stata does something funny with aspect that is easy to see with hexes
-di `aspect'
+//di `aspect'
 // ###############################################
 
 
 // ############## Part 2 user inputs #############
-global wdir "~/Dropbox/stata-svg/hexbin"
-global nhexr 20 // number of hexagons per row
-global aspect 1 // aspect ratio
+// $NHEXR BECOMES `ROWS', $NHEXC `COLS'
+local ncat 4 // number of categories (hexagon colours)
 matrix color_ramp = (100, 200, 180 \ ///
 				     90, 190, 170 \ ///
 				     80, 180, 160 \ ///
 					 70, 170, 150) // replace with tokenized anything
-global svgfile "scatter-for-hexbin.svg"
-global replace "replace"
-global output "output.svg"
-global nhexc=1+floor($aspect * $nhexr) // note this is the wider row
-global nhex=($nhexr * $nhexc) + floor($nhexr / 2) // SHOULD THIS BE MINUS?
-global aspect = ($nhexr *sqrt(3)/2)/$nhexc // aspect ratio
+local col1 "198 56 128"
+local col2 "160 94 128"
+local col3 "122 132 128"
+local col4 "85 170 128" // replace with tokenized anything
+// NEED TO CHECK IF N OF TOKENS = ncat
+
+local svgfile "scatter-for-hexbin.svg"
+local replace "replace"
+local output "output.svg"
+local nhex=(`rows' * `cols') + floor(`rows' / 2) // THIS WOULD BE MINUS IF COLS WAS THE LONGER
 // ###############################################
 
 
@@ -51,6 +55,7 @@ replace y = y+5 if runiform() > .7
 
 
 // ############## Part 1 : Generate square grid ###############
+preserve
 * Because of fillin, it's good to make a large square of gridmax by gridmax
 * then fillin and separate out the grids
 gen int ygrid = 1+2*(_n-1) in 1/`=(`gridmax'+1)/2' // for first grid, y is only evens
@@ -86,7 +91,7 @@ summ x //, meanonly
 gen long count = . // the whole thing has been leading to this variable!
 levelsof ygrid, local(ylevs)
 levelsof xgrid, local(xlevs)
-* Essentially we are checking if scaled x is within =/-1 and if 
+* Essentially we are checking if scaled x is within =/-1 and if  [SOME TEXT MISSING FROM THIS COMMENT]
 quietly {
 foreach yc of local ylevs {
 	foreach xc of local xlevs {
@@ -122,23 +127,29 @@ tw (scatter ygrid xgrid /*[fw=count]*/ , msym(o)),	///
 
 
 // ############# Robert's fake data ################
-set obs $nhex
-gen x=1+mod(_n-1, 2*$nhexc - 1)
-replace x=x-($nhexc - 1) if x>($nhexc -1)
-gen temp=(x==1)
-gen y=sum(temp)
-replace y=y*1.5 // this 1.5 changes with straight edge orientation
-replace x=x-0.5 if mod(y,3)==0 // this 3 changes with straight edge orientation
-replace x=x*sqrt(3) // this sqrt(3) changes with straight edge orientation
-replace temp=sin(y/5)-(x/17)
-egen colorcat=cut(temp), group(4)
+/*
+	set obs `nhex'
+	gen x=1+mod(_n-1, 2*$nhexc - 1)
+	replace x=x-($nhexc - 1) if x>($nhexc -1)
+	gen temp=(x==1)
+	gen y=sum(temp)
+	replace y=y*1.5 // this 1.5 changes with straight edge orientation
+	replace x=x-0.5 if mod(y,3)==0 // this 3 changes with straight edge orientation
+	replace x=x*sqrt(3) // this sqrt(3) changes with straight edge orientation
+	replace temp=sin(y/5)-(x/17)
+*/
+// #################################################
+
+
+// #################### Make interim SVG scatterplot ###################
+egen colorcat=cut(count), group(`ncat')
 twoway (scatter y x if colorcat==0, mcolor("198 56 128")) ///
        (scatter y x if colorcat==1, mcolor("160 94 128")) ///
 	   (scatter y x if colorcat==2, mcolor("122 132 128")) ///
 	   (scatter y x if colorcat==3, mcolor("85 170 128")) ///
 	   , xlab(minmax, format(%9.0fc)) ylab(minmax, format(%9.0fc))	///
 		 aspect($aspect ) legend(off) graphregion(color(white))
-graph export "$svgfile", $replace
+graph export `"`svgfile'"', `replace'
 // #################################################
 
 
@@ -147,10 +158,8 @@ graph export "$svgfile", $replace
 
 
 // ######################## Part 2 ############################
-// put data to one side for later
-preserve
 clear
-set obs $nhex
+set obs `nhex'
 gen x=.
 gen y=.
 gen fill=""
@@ -160,8 +169,8 @@ tempname fh
 tempname fh2
 tempname fh3
 tempfile endfile
-file open `fh' using "$svgfile", read text // write if replacing
-file open `fh2' using "$output", write text replace // if writing to a new file, this holds the SVG up to the circles
+file open `fh' using `"`svgfile'"', read text // write if replacing
+file open `fh2' using `"`output'"', write text replace // if writing to a new file, this holds the SVG up to the circles
 file open `fh3' using "`endfile'", write text replace // this holds the SVG after the circles (gets deleted later)
 
 //	get row & col distances
@@ -255,7 +264,7 @@ local hexpoints = "0,`hb1' `hb866',`hb5' `hb866',-`hb5' 0,-`hb1' -`hb866',-`hb5'
 
 
 // open output read write
-file open `fh2' using "$output", read write text
+file open `fh2' using `"`output'"', read write text
 file seek `fh2' eof  // move to end
 
 // add symbol
