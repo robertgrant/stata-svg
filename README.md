@@ -10,7 +10,7 @@ These require Stata 14 and up.
 
 ## Hexagonal binning
 
-This is unlike other commands here that take an extant SVG file and make it funky. This one takes data and uses SVG to give you something new. Specifically, given x and y variables, **ncat** number of categories and a colorramp, you get a hexbin .svg file.  
+**hexbin.do** is unlike other commands here that take an extant SVG file and make it funky. This one takes data and uses SVG to give you something new. Specifically, given x and y variables, **ncat** number of categories and a colorramp, you get a hexbin .svg file. 
 
 ### To do
 * We should accept any twoway options and pass them on. A particular thing people will want is to have no axes, for maps and such.
@@ -21,7 +21,7 @@ This is unlike other commands here that take an extant SVG file and make it funk
 
 ## Embedding in HTML with JavaScript to get some interactivity
 
-This takes an SVG file and wraps it up in an .html file, with some D3 JavaScript. At present, it adds a heading (with text specified in the **moheading** option) under the chart when viewed in the web browser, and on rolling the mouse over a circle, the corresponding value of the variable named in the **movar** option is displayed under that.
+**svgwithjs.do** takes an SVG file and wraps it up in an .html file, with some D3 JavaScript. At present, it adds a heading (with text specified in the **moheading** option) under the chart when viewed in the web browser, and on rolling the mouse over a circle, the corresponding value of the variable named in the **movar** option is displayed under that.
 It assumes that movar in the open dataset is in the same order as the circles in the SVG file. This will be true if you have made the SVG with a single **scatter** command, there's no missing data in the xvar or yvar or movar, and you didn't do daft things like sorting the data in the meantime.
 This depends on **svgtag**.
 
@@ -35,7 +35,7 @@ This depends on **svgtag**.
 
 ## Background utilities: svgtag
 
-This takes in an SVG file, looks for lines and tags them with a class such as 'plotregion', and markers with an id such as 'circle123'. At present it only finds circles, graphregion and plotregion, and returns various values in r(). Of these, the pixel locations of the plotregion are useful.
+**svgtag.do** takes in an SVG file, looks for lines and tags them with a class such as 'plotregion', and markers with an id such as 'circle123'. At present it only finds circles, graphregion and plotregion, and returns various values in r(). Of these, the pixel locations of the plotregion are useful.
 
 ### To do
 * Write metadata as a comment block containing do-file code that would read the coordinates of the data in: both the pixels and the original variable values, also the pixels for the plotregion
@@ -48,7 +48,7 @@ This takes in an SVG file, looks for lines and tags them with a class such as 'p
 
 ## Background utilities: svgbackground
 
-This adds a raster image over the graphregion and plotregion but under everything else. It depends on **svgtag**. SVG standards include .jpg, .png and .svg itself (the last of these may be rendered as raster and lose quality). Specific browsers may allow others but there's no guarantee.
+**svgbackground.do** adds a raster image over the graphregion and plotregion but under everything else. It depends on **svgtag**. SVG standards include .jpg, .png and .svg itself (the last of these may be rendered as raster and lose quality). Specific browsers may allow others but there's no guarantee.
 
 ### To do
 * Check image file type
