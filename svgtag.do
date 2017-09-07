@@ -19,8 +19,8 @@ cd "~/git/stata-svg"
 
 capture program drop svgtag
 program define svgtag, rclass
-syntax anything [, Replace Metadata]
-args inputfile outputfile
+syntax anything [, Outputfile(string) Replace Metadata]
+args inputfile
 
 
 //arguments:
@@ -161,7 +161,7 @@ file close `fi'
 file close `fo'
 
 // replace option
-if `"`outputfile'"'=="" & "`replace'"=="replace" {
+if `"`outputfile'"'=="`tempout'" & "`replace'"=="replace" {
 	if lower("$S_OS")=="windows" {
 		shell del `"`inputfile'"'
 		shell rename `"`outputfile'"' `"`inputfile'"'
@@ -187,4 +187,10 @@ return local graphregiony "`returngry'"
 
 end
 
+
+
+
+
+// example run
 svgtag "hexbin/scatter-for-hexbin.svg" "tagged.svg", 
+
