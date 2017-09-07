@@ -14,7 +14,8 @@ version 14.2
 */
 
 clear all
-
+webuse iris
+cd "~/git/stata-svg/hexbin"
 
 // define program here
 /*capture program drop svghex
@@ -24,9 +25,9 @@ syntax
 
 
 // ############## User inputs #############
-local svgfile "scatter-for-hexbin.svg"
+local svgfile "irisgrid.svg"
 local replace "replace"
-local output "output.svg"
+local output "irishex.svg"
 local rows 13
 local cols 17 
 local twopts "" // other twoway options, should come in asis
@@ -50,13 +51,15 @@ local col4 "85 170 128" // replace with tokenized anything
 // ############### Derived macros ##################
 local gridmax = max(`rows',`cols')
 local aspect = (.5*sqrt(3)*(`rows'+1))/(`cols'+1)
-local nhex=(`rows' * ((`cols'/2)-1)) + floor(`rows' / 2) 
-local shortcols = (`cols'/2)-1
-local longcol = `shortcols'+2
+local shortcols = floor(`cols'/2) // could there be rounding error here...?
+local longcol = `shortcols'+1
+local nhex=(`rows'*`shortcols') + floor(`rows'/2) 
 dis "rows = `rows', short cols = `shortcols', long cols = `longcols', nhex = `nhex'"
 
 
 tempname ygrid xgrid count
+tempvar xsc ysc
+
 // ############## Generate square grid ###############
 preserve
 * Because of fillin, it's good to make a large square of gridmax by gridmax
@@ -261,11 +264,10 @@ file close `fh3'
 // get data back
 restore
 
-end
+//end
 
 
 
-capture log close
 log using "hexbin-log.smcl", replace smcl
 //svghex ...
 capture log close
