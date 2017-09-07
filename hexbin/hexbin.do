@@ -26,12 +26,17 @@ syntax
 // ############## Part 1 user inputs #############
 local rows 13
 local cols 17 // IS THIS THE LONGER OR SHORTER OF THE TWO POSSIBLE ROWS?
+	// tpm 2017-09-06 - This is the sum of both rows. One row will be (`cols'/2)+1 and the other (`cols'/2)-1.
 // TIM CAN YOU EXPLAIN WHAT d IS? WILL IT BE A PROGRAM ARGUMENT?
-local d 1 // d may be set to 1 in general so probably remove (unless useful later for y,x scaling)
+  // tpm 2017-09-06 - it was going to be a program argument giving the length of an edge
+	// but since I am scaling the grid there's no reason to use anything but d=1 so removed
+//local d 1 // d may be set to 1 in general so probably remove (unless useful later for y,x scaling)
 local gridmax = max(`rows',`cols')
-local aspect = (.5*sqrt(3)*(`rows'+1))/(`cols'+1) // Stata does something funny with aspect that is easy to see with hexes
+local aspect = (.5*sqrt(3)*(`rows'+1))/(`cols'+1)
 //di `aspect'
 // THERE SHOULD BE A NOAXES OPTION
+// tpm - YES! I think we should add in a lot of options to the graphs.
+// Ultimately it's only passing it to a twoway scatter so we can accept any option and let twoway complain
 local xvar "sepwid"
 local yvar "seplen"
 // ###############################################
@@ -54,6 +59,8 @@ local svgfile "scatter-for-hexbin.svg"
 local replace "replace"
 local output "output.svg"
 local nhex=(`rows' * `cols') + floor(`rows' / 2) // THIS WOULD BE MINUS IF COLS WAS THE LONGER
+	// tpm 2017-09-06 - and also on whether we have vertical or horizontal flat edge, I think
+	// So should we make `nhex' conditional?
 // ###############################################
 
 
@@ -68,15 +75,15 @@ local nhex=(`rows' * `cols') + floor(`rows' / 2) // THIS WOULD BE MINUS IF COLS 
 // ##############################################
 
 
-tempname ygrid
-tempname xgrid
-tempname count
+tempname ygrid xgrid count
 // ############## Part 1 : Generate square grid ###############
 preserve
 * Because of fillin, it's good to make a large square of gridmax by gridmax
 * then fillin and separate out the grids
+if _N < `gridmax' set obs `gridmax'
 gen int `ygrid' = 1+2*(_n-1) in 1/`=(`gridmax'+1)/2' // for first grid, y is only evens
 // WHAT IF _N < `gridmax' ?
+  // tpm 2017-09-06 - Good point. I think resolved with if statement
 gen int `xgrid' = 2*(_n-1) in 1/`=(`gridmax'+1)/2' // for first grid, y is only odds
 fillin `xgrid' `ygrid' // fillin is pretty good, but must be a better way!
 * convenient to put into mata to remove fillin-expanded rows
@@ -88,7 +95,7 @@ putmata YX2 = (`ygrid' `xgrid'), omitmissing replace
 mata: YX = YX1 \ YX2
 	drop if _fillin
 	drop `ygrid' `xgrid' _fillin
-getmata (`ygrid' `xgrid') = Y`X, force
+getmata (`ygrid' `xgrid') = YX, force
 replace `ygrid' = . if `ygrid'>`rows'-1
 replace `xgrid' = . if `xgrid'>`cols'-1
 // ############################################################
@@ -107,15 +114,15 @@ summ `xvar' //, meanonly
 gen long `count' = . // the whole thing has been leading to this variable!
 levelsof `ygrid', local(ylevs)
 levelsof `xgrid', local(xlevs)
-* Essentially we are checking if scaled x is within =/-1 and if  [SOME TEXT MISSING FROM THIS COMMENT]
+* Essentially we are checking if scaled x is within +/-1 and if y falls above or below the sloped lines (vertical flat edge)
 quietly {
 foreach yc of local ylevs {
 	foreach xc of local xlevs {
 		count if  `ygrid'==`yc' & `xgrid'==`xc' // only want to bother counting if the grid combo exists
 		if r(N) > 0 {
 			di as text "yc = " as result `yc' as text ", xc = " as result `xc'
- 			qui count if (`xsc' > `xc' - (1*`d'))	///
-				& (`xsc' < `xc' + (1*`d'))	///
+ 			qui count if (`xsc' > `xc' - (1))	///
+				& (`xsc' < `xc' + (1))	///
 				& (`ysc' < `yc' + 1 - (.5*(`xsc'-`xc'))) ///
 				& (`ysc' < `yc' + 1 + (.5*(`xsc'-`xc'))) ///
 				& (`ysc' > `yc' - 1 - (.5*(`xsc'-`xc'))) ///
@@ -132,7 +139,6 @@ replace `xgrid' = ((`xgrid'/`cols')*(`xmax'-`xmin')) + `xmin'
 
 
 // ################### Part 1 demo with a circle bin ####################
-* The aspect only works if the bins fill the plotregion. It's hard to make this happen.
 /*
 tw (scatter ygrid xgrid /*[fw=count]*/ , msym(o)),	///
 	ylab(minmax, format(%9.2fc))	///
