@@ -23,27 +23,19 @@ syntax
 */
 
 
-// ############## Part 1 user inputs #############
+// ############## User inputs #############
+local svgfile "scatter-for-hexbin.svg"
+local replace "replace"
+local output "output.svg"
 local rows 13
-local cols 17 // IS THIS THE LONGER OR SHORTER OF THE TWO POSSIBLE ROWS?
-	// tpm 2017-09-06 - This is the sum of both rows. One row will be (`cols'/2)+1 and the other (`cols'/2)-1.
-// TIM CAN YOU EXPLAIN WHAT d IS? WILL IT BE A PROGRAM ARGUMENT?
-  // tpm 2017-09-06 - it was going to be a program argument giving the length of an edge
-	// but since I am scaling the grid there's no reason to use anything but d=1 so removed
-//local d 1 // d may be set to 1 in general so probably remove (unless useful later for y,x scaling)
-local gridmax = max(`rows',`cols')
-local aspect = (.5*sqrt(3)*(`rows'+1))/(`cols'+1)
-//di `aspect'
-// THERE SHOULD BE A NOAXES OPTION
-// tpm - YES! I think we should add in a lot of options to the graphs.
-// Ultimately it's only passing it to a twoway scatter so we can accept any option and let twoway complain
+local cols 17 
+local twopts "" // other twoway options, should come in asis
+/* 
+	With vertical straight edges, alternate rows of hexagons have (`cols'/2)+1 and (`cols'/2)-1 hexagons across.
+	So, cols has to be an odd integer.
+*/
 local xvar "sepwid"
 local yvar "seplen"
-// ###############################################
-
-
-// ############## Part 2 user inputs #############
-// $NHEXR BECOMES `ROWS', $NHEXC `COLS'
 local ncat 4 // number of categories (hexagon colours)
 matrix color_ramp = (100, 200, 180 \ ///
 				     90, 190, 170 \ ///
@@ -55,35 +47,22 @@ local col3 "122 132 128"
 local col4 "85 170 128" // replace with tokenized anything
 // NEED TO CHECK IF N OF TOKENS = ncat
 
-local svgfile "scatter-for-hexbin.svg"
-local replace "replace"
-local output "output.svg"
-local nhex=(`rows' * `cols') + floor(`rows' / 2) // THIS WOULD BE MINUS IF COLS WAS THE LONGER
-	// tpm 2017-09-06 - and also on whether we have vertical or horizontal flat edge, I think
-	// So should we make `nhex' conditional?
-// ###############################################
-
-
-
-
-
-
-
-// ############# Tim's fake data ################
-//drawnorm y x, n(500) clear
-//replace y = y+5 if runiform() > .7
-// ##############################################
+// ############### Derived macros ##################
+local gridmax = max(`rows',`cols')
+local aspect = (.5*sqrt(3)*(`rows'+1))/(`cols'+1)
+local nhex=(`rows' * ((`cols'/2)-1)) + floor(`rows' / 2) 
+local shortcols = (`cols'/2)-1
+local longcol = `shortcols'+2
+dis "rows = `rows', short cols = `shortcols', long cols = `longcols', nhex = `nhex'"
 
 
 tempname ygrid xgrid count
-// ############## Part 1 : Generate square grid ###############
+// ############## Generate square grid ###############
 preserve
 * Because of fillin, it's good to make a large square of gridmax by gridmax
 * then fillin and separate out the grids
 if _N < `gridmax' set obs `gridmax'
 gen int `ygrid' = 1+2*(_n-1) in 1/`=(`gridmax'+1)/2' // for first grid, y is only evens
-// WHAT IF _N < `gridmax' ?
-  // tpm 2017-09-06 - Good point. I think resolved with if statement
 gen int `xgrid' = 2*(_n-1) in 1/`=(`gridmax'+1)/2' // for first grid, y is only odds
 fillin `xgrid' `ygrid' // fillin is pretty good, but must be a better way!
 * convenient to put into mata to remove fillin-expanded rows
@@ -98,10 +77,9 @@ mata: YX = YX1 \ YX2
 getmata (`ygrid' `xgrid') = YX, force
 replace `ygrid' = . if `ygrid'>`rows'-1
 replace `xgrid' = . if `xgrid'>`cols'-1
-// ############################################################
 
 
-// ################# Part 1 - scale and count x and y ####################
+// ################# Scale and count x and y ####################
 * Have to scale x and y data first (our first reference to y and x)
 summ `yvar' //, meanonly
 	local ymin = r(min) // needed for later when we will rescale the grid
@@ -135,34 +113,6 @@ foreach yc of local ylevs {
 * Rescale the grids to actual var scale now that we have counts
 replace `ygrid' = ((`ygrid'/`rows')*(`ymax'-`ymin')) + `ymin'
 replace `xgrid' = ((`xgrid'/`cols')*(`xmax'-`xmin')) + `xmin'
-// #######################################################################
-
-
-// ################### Part 1 demo with a circle bin ####################
-/*
-tw (scatter ygrid xgrid /*[fw=count]*/ , msym(o)),	///
-	ylab(minmax, format(%9.2fc))	///
-	xlab(minmax, format(%9.2fc))	///
-	aspect(`aspect') name(circ_result, replace)
-*/
-// ######################################################################
-
-
-
-
-// ############# Robert's fake data ################
-/*
-	set obs `nhex'
-	gen x=1+mod(_n-1, 2*$nhexc - 1)
-	replace x=x-($nhexc - 1) if x>($nhexc -1)
-	gen temp=(x==1)
-	gen y=sum(temp)
-	replace y=y*1.5 // this 1.5 changes with straight edge orientation
-	replace x=x-0.5 if mod(y,3)==0 // this 3 changes with straight edge orientation
-	replace x=x*sqrt(3) // this sqrt(3) changes with straight edge orientation
-	replace temp=sin(y/5)-(x/17)
-*/
-// #################################################
 
 
 // #################### Make interim SVG scatterplot ###################
@@ -174,18 +124,13 @@ twoway (scatter `yvar' `xvar' if colorcat==0, mcolor("`col1'")) ///
 	   (scatter `yvar' `xvar' if colorcat==3, mcolor("`col4'")) ///
 	   , xlab(minmax, format(%9.0fc)) ylab(minmax, format(%9.0fc))	///
 		 aspect($aspect ) legend(off) graphregion(color(white))
-// THE NOAXES OPTION TAKES EFFECT HERE
-graph export `"`svgfile'"', `replace'
-// #################################################
+// PASS TWOWAY OPTIONS ALONG HERE
+graph export `"`svgfile'"', `replace' `twopts'
 
 
-
-
-
-
-// ######################## Part 2 ############################
-clear
+// #################### Examine interim SVG file and load details into data #######################
 // make new data to hold what's in the interim SVG file in pixels, color codes etc
+clear
 set obs `nhex'
 gen x=.
 gen y=.
@@ -205,42 +150,32 @@ file read `fh' svgline
 local loopcount=1
 local circount=0
 local marked=0
-//dis `"this line is: `svgline'"' // ***waypoint***
 while r(eof)==0 {
 	//dis `"this line is: `svgline'"'
 	local svglinelen=strlen(`"`svgline'"')
 	if `svglinelen'>7 {
 		local temp = substr(`"`svgline'"',2,7)
-		//dis `"chars 2-7 are: `temp'"' // ***waypoint***
 		if substr(`"`svgline'"',2,7)=="<circle" {
 				local ++circount
 			// locate first quotation mark (start of x)
 				local svglinequot=strpos(`"`svgline'"',`"""')
-				//dis "found a quote at pos `svglinequot'" // ***waypoint***
 				local cutline = substr(`"`svgline'"',`svglinequot'+1,.)
-				//dis `"cutline is: `cutline'"' // ***waypoint***
 			// locate second quotation mark (end of x)
 				local svglinequot=strpos(`"`cutline'"',`"""')
 			// extract x
 				local svgx=substr(`"`cutline'"',1,`svglinequot'-1)
-				//dis "I think x is: `svgx'" // ***waypoint***
 				local cutline = substr(`"`cutline'"',`svglinequot'+1,.)
 			// locate third quotation mark (start of y)
 				local svglinequot=strpos(`"`cutline'"',`"""')
-				//dis "found a quote at pos `svglinequot'" // ***waypoint***
 				local cutline = substr(`"`cutline'"',`svglinequot'+1,.)
-				//dis `"cutline is: `cutline'"' // ***waypoint***
 			// locate fourth quotation mark (end of y)
 				local svglinequot=strpos(`"`cutline'"',`"""')
 			// extract y
 				local svgy=substr(`"`cutline'"',1,`svglinequot'-1)
-				//dis "I think y is: `svgy'" // ***waypoint***
 				local cutline = substr(`"`cutline'"',`svglinequot'+1,.)
 			// locate & extract fill color
 				local svglinequot=strpos(`"`cutline'"',"fill:#")
-				//dis "found a fill at pos `svglinequot'" // ***waypoint***
 				local svgfill=substr(`"`cutline'"',`svglinequot'+6,6)
-				//dis "I think fill is: `svgfill'" // ***waypoint***
 				local cutline = substr(`"`cutline'"',`svglinequot'+1,.)
 			// add to data
 				replace x=`svgx' in `circount'
@@ -290,7 +225,7 @@ local hb866=0.866*`hexscale'
 local hexpoints = "0,`hb1' `hb866',`hb5' `hb866',-`hb5' 0,-`hb1' -`hb866',-`hb5' -`hb866',`hb5' 0,`hb1'"
 
 
-// open output read write
+// #################### Write hexagons to the output file ####################
 file open `fh2' using `"`output'"', read write text
 file seek `fh2' eof  // move to end
 
@@ -309,7 +244,7 @@ forvalues i=1/`circount' {
 }
 file write `fh2' "</g>" _n
 
-// add contents of endfile
+// #################### Copy the rest of the SVG to the output file ####################
 file read `fh3' endline
 while r(eof)==0 {
 	file write `fh2' `"`endline'"' _n
@@ -325,7 +260,6 @@ file close `fh3'
 
 // get data back
 restore
-// ####################################################################
 
 end
 
