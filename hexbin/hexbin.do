@@ -14,8 +14,9 @@ version 14.2
 */
 
 clear all
-cd "~/git/stata-svg/hexbin"
+//cd "~/git/stata-svg/hexbin"
 use "../iris.dta"
+capture log close _all
 log using "hexbin-log.smcl", replace smcl
 
 // define program here
@@ -29,8 +30,8 @@ syntax
 local svgfile "irisgrid.svg"
 local replace "replace"
 local output "irishex.svg"
-local rows 13
-local cols 17 
+local rows 15
+local cols 23
 local twopts "" // other twoway options, should come in asis
 /* 
 	With vertical straight edges, alternate rows of hexagons have (`cols'/2)+1 and (`cols'/2)-1 hexagons across.
@@ -42,7 +43,7 @@ local ncat 4 // number of categories (hexagon colours)
 matrix color_ramp = (100, 200, 180 \ ///
 				     90, 190, 170 \ ///
 				     80, 180, 160 \ ///
-					 70, 170, 150) // replace with tokenized anything
+					   70, 170, 150) // replace with tokenized anything
 local col1 "64 71 136"
 local col2 "35 138 141"
 local col3 "85 198 103"
@@ -51,7 +52,7 @@ local col4 "253 231 37" // replace with tokenized anything
 
 // ############### Derived macros ##################
 local gridmax = max(`rows',`cols')
-local aspect = (.5*sqrt(3)*(`rows'+1))/(`cols'+1)
+local aspect = (.91*sqrt(3)*(`rows'+1))/(`cols'+1)
 local shortcols = floor(`cols'/2) // could there be rounding error here...?
 local longcol = `shortcols'+1
 local nhex=(`rows'*`shortcols') + floor(`rows'/2) 
@@ -122,14 +123,17 @@ replace `xgrid' = ((`xgrid'/`cols')*(`xmax'-`xmin')) + `xmin'
 // #################### Make interim SVG scatterplot ###################
 egen colorcat=cut(`count'), group(`ncat')
 // OPEN DO-FILE AND WRITE OUT EACH CATEGORY LINE LIKE THIS, THEN RUN
-twoway (scatter `ygrid' `xgrid' if colorcat==0, mcolor("`col1'")) ///
-       (scatter `ygrid' `xgrid' if colorcat==1, mcolor("`col2'")) ///
-	   (scatter `ygrid' `xgrid' if colorcat==2, mcolor("`col3'")) ///
-	   (scatter `ygrid' `xgrid' if colorcat==3, mcolor("`col4'")) ///
+twoway (scatter `ygrid' `xgrid' if colorcat==0, mcolor("`col1'") ms(o)) ///
+       (scatter `ygrid' `xgrid' if colorcat==1, mcolor("`col2'") ms(o)) ///
+	   (scatter `ygrid' `xgrid' if colorcat==2, mcolor("`col3'") ms(o)) ///
+	   (scatter `ygrid' `xgrid' if colorcat==3, mcolor("`col4'") ms(o)) ///
 	   , xlab(minmax, format(%9.0fc)) ylab(minmax, format(%9.0fc))	///
-		 aspect($aspect ) legend(off) graphregion(color(white))
+		 aspect(`aspect') legend(off) graphregion(color(white))
 // PASS TWOWAY OPTIONS ALONG HERE
 graph export `"`svgfile'"', `replace' `twopts'
+
+// ***waypoint***
+save "delete-me.dta", replace 
 
 
 // #################### Examine interim SVG file and load details into data #######################
@@ -141,9 +145,7 @@ gen y=.
 gen fill=""
 
 //	open svg file
-tempname fh
-tempname fh2
-tempname fh3
+tempname fh fh2 fh3
 tempfile endfile
 file open `fh' using `"`svgfile'"', read text // write if replacing
 file open `fh2' using `"`output'"', write text replace // if writing to a new file, this holds the SVG up to the circles
@@ -158,33 +160,37 @@ while r(eof)==0 {
 	local svglinelen=strlen(`"`svgline'"')
 	if `svglinelen'>7 {
 		local temp = substr(`"`svgline'"',2,7)
-		if substr(`"`svgline'"',2,7)=="<circle" {
-				local ++circount
+		if regexm(`"`svgline'"',`"<circle"') & regexm(`"`svgline'"',`";stroke-width:"') {
+		} // gets rid of extraneous circle!
+		else if regexm(`"`svgline'"',`"<circle"') {
+			di as text "I count!"
+			local ++circount
 			// locate first quotation mark (start of x)
-				local svglinequot=strpos(`"`svgline'"',`"""')
-				local cutline = substr(`"`svgline'"',`svglinequot'+1,.)
+			local svglinequot=strpos(`"`svgline'"',`"""')
+			local cutline = substr(`"`svgline'"',`svglinequot'+1,.)
 			// locate second quotation mark (end of x)
-				local svglinequot=strpos(`"`cutline'"',`"""')
+			local svglinequot=strpos(`"`cutline'"',`"""')
 			// extract x
-				local svgx=substr(`"`cutline'"',1,`svglinequot'-1)
-				local cutline = substr(`"`cutline'"',`svglinequot'+1,.)
+			local svgx=substr(`"`cutline'"',1,`svglinequot'-1)
+			local cutline = substr(`"`cutline'"',`svglinequot'+1,.)
 			// locate third quotation mark (start of y)
-				local svglinequot=strpos(`"`cutline'"',`"""')
-				local cutline = substr(`"`cutline'"',`svglinequot'+1,.)
+			local svglinequot=strpos(`"`cutline'"',`"""')
+			local cutline = substr(`"`cutline'"',`svglinequot'+1,.)
 			// locate fourth quotation mark (end of y)
-				local svglinequot=strpos(`"`cutline'"',`"""')
+			local svglinequot=strpos(`"`cutline'"',`"""')
 			// extract y
-				local svgy=substr(`"`cutline'"',1,`svglinequot'-1)
-				local cutline = substr(`"`cutline'"',`svglinequot'+1,.)
+			local svgy=substr(`"`cutline'"',1,`svglinequot'-1)
+			local cutline = substr(`"`cutline'"',`svglinequot'+1,.)
 			// locate & extract fill color
-				local svglinequot=strpos(`"`cutline'"',"fill:#")
-				local svgfill=substr(`"`cutline'"',`svglinequot'+6,6)
-				local cutline = substr(`"`cutline'"',`svglinequot'+1,.)
+			local svglinequot=strpos(`"`cutline'"',"fill:#")
+			local svgfill=substr(`"`cutline'"',`svglinequot'+6,6)
+			dis "I think fill is: `svgfill'" // ***waypoint***
+			local cutline = substr(`"`cutline'"',`svglinequot'+1,.)
 			// add to data
-				replace x=`svgx' in `circount'
-				replace y=`svgy' in `circount'
-				replace fill="`svgfill'" in `circount'
-				local ++loopcount
+			replace x=`svgx' in `circount'
+			replace y=`svgy' in `circount'
+			replace fill="`svgfill'" in `circount'
+			local ++loopcount
 		}
 		// if not a circle, write the line to the output file
 		else {
@@ -217,7 +223,7 @@ save "`working'", replace
 */
 sort y
 collapse (mean) x, by(y)
-local hexscale=(y[2]-y[1])/1.5 // for vertical straight edge; (sqrt(3)/2) otherwise
+local hexscale=(y[2]-y[1])/1.7 // for vertical straight edge; sqrt(3) otherwise
 use "`working'", replace
 //	get points for <symbol> with required size hex
 // needs to swap columns if horizontal straight edge
@@ -258,8 +264,6 @@ while r(eof)==0 {
 file close `fh2'
 file close `fh3'
 
-// ***waypoint***
-save "delete-me.dta", replace 
 
 // get data back
 restore
@@ -272,4 +276,4 @@ restore
 capture log close
 
 
-
+shell start irishex.svg
