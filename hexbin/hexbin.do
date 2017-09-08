@@ -155,7 +155,6 @@ local loopcount=1
 local circount=0
 local marked=0
 while r(eof)==0 {
-	//dis `"this line is: `svgline'"'
 	local svglinelen=strlen(`"`svgline'"')
 	if `svglinelen'>7 {
 		local temp = substr(`"`svgline'"',2,7)
@@ -179,9 +178,7 @@ while r(eof)==0 {
 				local cutline = substr(`"`cutline'"',`svglinequot'+1,.)
 			// locate & extract fill color
 				local svglinequot=strpos(`"`cutline'"',"fill:#")
-				dis `"Found a fill at pos `svglinequot' in `cutline'"'
 				local svgfill=substr(`"`cutline'"',`svglinequot'+6,6)
-				dis "I think it is `svgfill'"
 				local cutline = substr(`"`cutline'"',`svglinequot'+1,.)
 			// add to data
 				replace x=`svgx' in `circount'
@@ -220,7 +217,7 @@ save "`working'", replace
 */
 sort y
 collapse (mean) x, by(y)
-local hexscale=(y[2]-y[1])/sqrt(3) // for vertical straight edge; 1.5 otherwise
+local hexscale=(y[2]-y[1])/1.5 // for vertical straight edge; (sqrt(3)/2) otherwise
 use "`working'", replace
 //	get points for <symbol> with required size hex
 // needs to swap columns if horizontal straight edge
