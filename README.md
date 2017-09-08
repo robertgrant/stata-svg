@@ -4,15 +4,20 @@ These require Stata 14 and up.
 
 ## Semi-transparency
 
+**semi-trans/trans-tim.do** shows how to add opacity to the SVG styles using **filefilter**. It's easy, though you might have to be clever about what to search for and replace. One problem is where you have overlaid twoway plots of the same type of SVG object (line, circle) and want to add opacity to some and not others.
+
 ### To do
+
+* link to **svgtag**
 
 ---
 
 ## Hexagonal binning
 
-**hexbin.do** is unlike other commands here that take an extant SVG file and make it funky. This one takes data and uses SVG to give you something new. Specifically, given x and y variables, **ncat** number of categories and a colorramp, you get a hexbin .svg file. 
+**hexbin.do** is unlike other commands here that take an extant SVG file and make it funky. This one takes data and uses SVG to give you something new. Specifically, given x and y variables, **ncat** number of categories and a colorramp, you get a hexbin .svg file.
 
 ### To do
+* make an actual functioning command, with options and all that stuff
 * We should accept any twoway options and pass them on. A particular thing people will want is to have no axes, for maps and such.
 * At present, you have to have vertical straight edges (see the do-file for what this means). We should allow horizontal too.
 * Include an option to leave count=0 hexagons out completely (make them totally transparent)
