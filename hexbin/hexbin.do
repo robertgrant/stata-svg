@@ -14,8 +14,9 @@ version 14.2
 */
 
 clear all
-webuse iris
 cd "~/git/stata-svg/hexbin"
+use "../iris.dta"
+log using "hexbin-log.smcl", replace smcl
 
 // define program here
 /*capture program drop svghex
@@ -178,12 +179,14 @@ while r(eof)==0 {
 				local cutline = substr(`"`cutline'"',`svglinequot'+1,.)
 			// locate & extract fill color
 				local svglinequot=strpos(`"`cutline'"',"fill:#")
+				dis `"Found a fill at pos `svglinequot' in `cutline'"'
 				local svgfill=substr(`"`cutline'"',`svglinequot'+6,6)
+				dis "I think it is `svgfill'"
 				local cutline = substr(`"`cutline'"',`svglinequot'+1,.)
 			// add to data
 				replace x=`svgx' in `circount'
 				replace y=`svgy' in `circount'
-				replace fill="`="`svgfill''" in `circount'
+				replace fill="`svgfill'" in `circount'
 				local ++loopcount
 		}
 		// if not a circle, write the line to the output file
@@ -259,7 +262,7 @@ file close `fh2'
 file close `fh3'
 
 // ***waypoint***
-//save "delete-me.dta", replace 
+save "delete-me.dta", replace 
 
 // get data back
 restore
@@ -268,7 +271,6 @@ restore
 
 
 
-log using "hexbin-log.smcl", replace smcl
 //svghex ...
 capture log close
 
