@@ -42,10 +42,10 @@ matrix color_ramp = (100, 200, 180 \ ///
 				     90, 190, 170 \ ///
 				     80, 180, 160 \ ///
 					 70, 170, 150) // replace with tokenized anything
-local col1 "198 56 128"
-local col2 "160 94 128"
-local col3 "122 132 128"
-local col4 "85 170 128" // replace with tokenized anything
+local col1 "64 71 136"
+local col2 "35 138 141"
+local col3 "85 198 103"
+local col4 "253 231 37" // replace with tokenized anything
 // NEED TO CHECK IF N OF TOKENS = ncat
 
 // ############### Derived macros ##################
@@ -121,10 +121,10 @@ replace `xgrid' = ((`xgrid'/`cols')*(`xmax'-`xmin')) + `xmin'
 // #################### Make interim SVG scatterplot ###################
 egen colorcat=cut(`count'), group(`ncat')
 // OPEN DO-FILE AND WRITE OUT EACH CATEGORY LINE LIKE THIS, THEN RUN
-twoway (scatter `yvar' `xvar' if colorcat==0, mcolor("`col1'")) ///
-       (scatter `yvar' `xvar' if colorcat==1, mcolor("`col2'")) ///
-	   (scatter `yvar' `xvar' if colorcat==2, mcolor("`col3'")) ///
-	   (scatter `yvar' `xvar' if colorcat==3, mcolor("`col4'")) ///
+twoway (scatter `ygrid' `xgrid' if colorcat==0, mcolor("`col1'")) ///
+       (scatter `ygrid' `xgrid' if colorcat==1, mcolor("`col2'")) ///
+	   (scatter `ygrid' `xgrid' if colorcat==2, mcolor("`col3'")) ///
+	   (scatter `ygrid' `xgrid' if colorcat==3, mcolor("`col4'")) ///
 	   , xlab(minmax, format(%9.0fc)) ylab(minmax, format(%9.0fc))	///
 		 aspect($aspect ) legend(off) graphregion(color(white))
 // PASS TWOWAY OPTIONS ALONG HERE
